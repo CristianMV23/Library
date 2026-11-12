@@ -14,47 +14,89 @@ from odoo import models, fields, api
 #     def _value_pc(self):
 #         for record in self:
 #             record.value2 = float(record.value) / 100
+class Cliente(models.Model):
+    _name = 'library.cliente'
+    
+    identificacion = fields.Char(string="ID", required=True)
+    name = fields.Char(string="Nombre", required=True)
+    email = fields.Char(string="Email")
+    telefono = fields.Integer(string="Teléfono")
+
+    #  1:N con Compra
+    compra_ids = fields.One2many(
+        'library.compra', 'cliente_id', string="Compras"
+    )
 
 
-class libro(models.Model):
+class Tienda(models.Model):
+    _name = 'library.tienda'
+    
 
+    id_tienda = fields.Char(string="ID Tienda", required=True)
+    nombre = fields.Char(string="Nombre", required=True)
+    direccion = fields.Char(string="Dirección")
+    numero_telf = fields.Integer(string="Número de teléfono")
+
+    #  1:N hacia Stock (Libros) y Compras
+    stock_libro_ids = fields.One2many(
+        'library.libro', 'tienda_id', string="Stock de Libros"
+    )
+    compra_ids = fields.One2many(
+        'library.compra', 'tienda_id', string="Compras"
+    )
+
+
+class Libro(models.Model):
     _name = 'library.libro'
     
-    titulo = fields.Char(string="Título", required=True)
-    autor = fields.Char(string="Autor", required=True)
-    editorial = fields.Char(string="Editorial", required=True)
+
+    id_libro = fields.Char(string="ID Libro", required=True)
     isbn = fields.Char(string="ISBN", required=True)
+    titulo = fields.Char(string="Título", required=True)
+    precio = fields.Float(string="Precio", required=True)
 
-    ejemplares=fields.One2many(
-        'library.ejemplar', 'libro', string="Ejemplares")
-        
-class ejemplar(models.Model):
+    # Relación N:1 con Tienda
+    tienda_id = fields.Many2one('library.tienda', string="Tienda")
 
-    _name = 'library.ejemplar'
+    #  N:M con Compra 
+    compra_ids = fields.Many2many(
+        'library.compra', string="Compras")
     
-    numeroRegistro = fields.Integer(string="Número de registro", required=True)
 
-    libro=fields.Many2one('biblary.libro', string="Libro")
-    #related field to show "titulo" in "Prestamos" tab in user's view
-    titulo = fields.Char(related="libro.titulo",store=True)
-    prestatario=fields.Many2one('res.users', string="Prestatario")
 
-class Categoria(models.Model):
+class Compra(models.Model):
+    _name = 'library.compra'
+    
 
-    _name = 'library.categoria'
+    id_compra = fields.Char(string="ID Compra", required=True)
+    fecha = fields.Char(string="Fecha", required=True)  # Recomendado: fields.Date
+    total = fields.Float(string="Total")
+    descuento = fields.Char(string="Descuento")  # Recomendado: fields.Float
+
+    #  N:1 con Cliente y Tienda
+    cliente_id = fields.Many2one('library.cliente', string="Cliente", required=True)
+    tienda_id = fields.Many2one('library.tienda', string="Tienda", required=True)
+
+    #  N:M con Libro
+    libro_ids = fields.Many2many(
+        'library.libro', string="Libros" )
+    
+
+class DetalleCompra(models.Model):
+    _name = 'library.detalle.compra'
     
     
-    name = fields.Char(string="Nombre de la categoría", required=True)
-    descripcion = fields.Text(string="Descripción")
-    
-    # Relación inversa One2many hacia los libros
-    libro_ids = fields.One2many(
-        'library.libro', 'categoria_id', string="Libros")       
+    libro_id = fields.Many2one('library.libro', string="Libro", required=True)
+    compra_id = fields.Many2one('library.compra', string="Compra", required=True)
 
-class user(models.Model):
+    # Atributos propios de la relación
+    cantidad = fields.Integer(string="Cantidad", default=1)
+    subtotal = fields.Float(string="Subtotal")
 
-    _name = 'res.users'
-    _inherit = 'res.users'
-    
-    prestamos=fields.One2many(
-        'library.ejemplar', 'prestatario', string="Préstamos")    
+#class user(models.Model):
+ #   _name = 'res.users'
+  #  _inherit = 'res.users'
+   
+  #  compra_ids=fields.One2many(
+
+   #     'library.compra', 'cliente_id', string="Compras")
